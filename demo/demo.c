@@ -45,13 +45,73 @@ void putArray(FILE *fp,int array[MAXSIZE]);
 Userlog* init_userlog();
 User* init_user();
 void putDate(FILE *fp,int date[8]);
-
+void reArray(int arr1[MAXSIZE],int arr2[MAXSIZE])
+{
+	for(int i=0;i<MAXSIZE;i++)
+	{
+		arr1[i]=arr2[i];
+	}
+}
+void arrToSt(FILE *fp,Account *account)
+{
+	int array[MAXSIZE];
+	int tag=0;
+	int count=0;
+	int temp;
+	while(temp=fgetc(fp)!=EOF)
+	{
+		while(temp=fgetc(fp)!=EOF)
+		{
+			if(temp<=9&&temp>=0)
+			{
+				array[count++]=temp;
+			}
+			if (count==6)
+			{
+				tag=1;
+				count=0;
+				break;
+			}
+		}
+		if(tag==1)
+		{
+			account->user[account->usernum]=(User*)malloc(sizeof(User));
+			reArray(account->user[account->usernum]->username,array);
+			while(temp=fgetc(fp)!=EOF)
+			{
+				tag=1;
+				if(temp<=9&&temp>=0)
+				{
+					array[count++]=temp;
+				}
+				if (count==6)
+				{
+					reArray(account->user[account->usernum]->password,array);
+					account->usernum++;
+					count=0;
+					break;
+				}
+			}
+		}	
+	}
+}
+void readAccount(Account *account)
+{
+	FILE *fp=fopen("user.txt","r");
+	rewind(fp);
+	arrToSt(fp,account);
+}
+//void readLog(Userlog *userlog)
+//{
+//
+//}
 
 int main(int argc, char const *argv[])
 {
 	Account *account;
 	Userlog *userlog[20];
 	account=init_account();
+	readAccount(account);
 	printf("Welcome\n");
 	printf("Login(0) or Registered(1)?\n");
 	int tag=Choose();
@@ -92,6 +152,7 @@ void Add(Userlog *userlog[20],int chmod)
 {
 	FILE *fp=fopen("log.txt","a+");
 	userlog[chmod]=init_userlog();
+	fprintf(fp, "%s:%d\n","UserId",chmod );
 	printf("Please input the date\n");
 	Assign_date(userlog[chmod]->date);
 	putDate(fp,userlog[chmod]->date);

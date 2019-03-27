@@ -1,3 +1,6 @@
+UserId:0
 Date:20000323
-Expenses=50Revenue =20Date:20000323
-Expenses=20	Revenue =30
+Expenses=50	Revenue =20
+UserId:2
+Date:20000323
+Expenses=60	Revenue =30
