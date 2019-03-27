@@ -1,0 +1,3 @@
+Date:20000323
+Expenses=50Revenue =20Date:20000323
+Expenses=20	Revenue =30
