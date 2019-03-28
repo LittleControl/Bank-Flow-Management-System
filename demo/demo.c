@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<malloc.h>
+#include<math.h>
 #define MAXSIZE 6
 typedef struct admin
 {
@@ -51,23 +52,25 @@ void reDate(int date1[8],int date2[8]);
 int readWhile(FILE *fp,int *temp,int array[MAXSIZE]);
 void arrToSt(FILE *fp,Account *account);
 void readAccount(Account *account);
-int readId(FILE *fp,int *temp,Userlog *userlog)
+int readId(FILE *fp,int *temp)
 {
 	int id=0;
-	while(temp!=10)
+	while(*temp!=10)
 	{
 		if(*temp<=57&&*temp>=48)
 		{
 			id=id*10+numSiwtch(temp);
 		}
+		*temp=fgetc(fp);
 	}
+	*temp=fgetc(fp);
 	return id;
 }
-void readDate(Userlog *userlog,int *temp)
+void readDate(FILE *fp,Userlog *userlog,int *temp)
 {
 	int date[8];
 	int count=0;
-	while(temp!=10)
+	while(*temp!=10)
 	{
 		if(*temp<=57&&*temp>=48)
 		{
@@ -76,20 +79,95 @@ void readDate(Userlog *userlog,int *temp)
 		if(count==8)
 		{
 			reDate(userlog->date,date);
+			// printDate(userlog->date);
+		}
+		*temp=fgetc(fp);
+	}
+	*temp=fgetc(fp);
+}
+void readEx(FILE *fp, Userlog *userlog,int *temp)
+{
+	int Ex[20];
+	int count=0;
+	while(*temp!=35)
+	{
+		if(*temp<=57&&*temp>=48)
+		{
+			Ex[count++]=numSiwtch(temp);
+		}
+		*temp=fgetc(fp);
+	}
+	*temp=fgetc(fp);
+	int sum=0;
+	for(int i=count-1;i>=0;i--)
+	{
+		sum=sum+i*pow(10,i);
+	}
+	userlog->expenses=sum;
+}
+void readRe(FILE *fp, Userlog *userlog,int *temp)
+{
+	int Re[20];
+	int count=0;
+	while(*temp!=10)
+	{	
+		if(*temp<=57&&*temp>=48)
+		{
+			Re[count++]=numSiwtch(temp);
+		}
+		*temp=fgetc(fp);
+	}
+	*temp=fgetc(fp);
+	int sum=0;
+	for(int i=count-1;i>=0;i--)
+	{
+		sum=sum+i*pow(10,i);
+	}
+	userlog->revenue=sum;
+}
+void init_array(int array[20])
+{
+	for (int i = 0; i < 20; ++i)
+	{
+		array[i]=0;
+	}
+}
+void idCount(int idArray[20],int id)
+{
+	for(int i=0;i<20;i++)
+	{
+		if(id==i)
+		{
+			idArray[i]++;
 		}
 	}
 }
-
 void readLog(Userlog *userlog[20])
 {
 	FILE *fp=fopen("log.txt","r");
 	int *temp;
+	temp=(int*)malloc(sizeof(int));
 	*temp=fgetc(fp);
-	int id=readId(fp,temp);
-	userlog[id]=init_userlog();
-	readDate();
-	readEx();
-	readRe();
+	int idArray[20];
+	init_array(idArray);
+	while(*temp!=-1)
+	{
+		int id=readId(fp,temp);
+		idCount(idArray,id);
+		if(idArray[id]!=0)
+		{
+			userlog[id]=init_userlog();
+		}	
+		readDate(fp,userlog[id],temp);
+		readEx(fp,userlog[id],temp);
+		readRe(fp,userlog[id],temp);
+		userlog[id]=userlog[id]->next;
+		userlog[id]=(Userlog*)malloc(sizeof(Userlog));
+	}
+	printDate(idArray);
+	printf("\n");
+	printf("expenses=%d\n",userlog[0]->expenses );
+	printDate(userlog[0]->date);
 }
 
 int main(int argc, char const *argv[])
@@ -97,7 +175,10 @@ int main(int argc, char const *argv[])
 	Account *account;
 	Userlog *userlog[20];
 	account=init_account();
+	printf("Reloading the date,please wait ...\n");
 	readAccount(account);
+	readLog(userlog);
+	printDate(userlog[0]->date);
 	printf("Welcome\n");
 	printf("Login(0) or Registered(1)?\n");
 	int tag=Choose();
@@ -203,7 +284,7 @@ void Operation(Userlog *userlog[20],int chmod)//-1 for admin ,-2 for none,else f
 			printf("Please input date you want to operation\n");
 			Assign_date(date);
 			Inquire(userlog,date,usrId,front); 
-			printf("1.add    \t2.delete \t3.modify \t4.inquire\n");
+			printf("1.add    \t2.delete \t3.modify \t4.inquire\t5.quit   \n");
 			scanf("%d",&choice);
 		}
 		else
@@ -211,7 +292,7 @@ void Operation(Userlog *userlog[20],int chmod)//-1 for admin ,-2 for none,else f
 			printf("Welcome to you \n");
 			int choice=0;
 			printf("What do you want to do?\n");
-			printf("1.inquire\t2.add\n");
+			printf("1.inquire\t2.add    \t3.quit    \n");
 			scanf("%d",&choice);
 			if(choice==1)
 			{
@@ -224,7 +305,11 @@ void Operation(Userlog *userlog[20],int chmod)//-1 for admin ,-2 for none,else f
 			{
 				Add(userlog,chmod);
 			}
-			if(choice!=1 && choice!=2)
+			if(choice==3)
+			{
+				exit(0);
+			}
+			if(choice!=1 && choice!=2 &&choice!=3)
 			{
 				printf("Your choice is wrong,please input again\n");
 				Operation(userlog,chmod);
