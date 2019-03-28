@@ -45,66 +45,52 @@ void putArray(FILE *fp,int array[MAXSIZE]);
 Userlog* init_userlog();
 User* init_user();
 void putDate(FILE *fp,int date[8]);
-void reArray(int arr1[MAXSIZE],int arr2[MAXSIZE])
+int numSiwtch(int *temp);
+void reArray(int arr1[MAXSIZE],int arr2[MAXSIZE]);
+void reDate(int date1[8],int date2[8]);
+int readWhile(FILE *fp,int *temp,int array[MAXSIZE]);
+void arrToSt(FILE *fp,Account *account);
+void readAccount(Account *account);
+int readId(FILE *fp,int *temp,Userlog *userlog)
 {
-	for(int i=0;i<MAXSIZE;i++)
+	int id=0;
+	while(temp!=10)
 	{
-		arr1[i]=arr2[i];
-	}
-}
-void arrToSt(FILE *fp,Account *account)
-{
-	int array[MAXSIZE];
-	int tag=0;
-	int count=0;
-	int temp;
-	while(temp=fgetc(fp)!=EOF)
-	{
-		while(temp=fgetc(fp)!=EOF)
+		if(*temp<=57&&*temp>=48)
 		{
-			if(temp<=9&&temp>=0)
-			{
-				array[count++]=temp;
-			}
-			if (count==6)
-			{
-				tag=1;
-				count=0;
-				break;
-			}
+			id=id*10+numSiwtch(temp);
 		}
-		if(tag==1)
+	}
+	return id;
+}
+void readDate(Userlog *userlog,int *temp)
+{
+	int date[8];
+	int count=0;
+	while(temp!=10)
+	{
+		if(*temp<=57&&*temp>=48)
 		{
-			account->user[account->usernum]=(User*)malloc(sizeof(User));
-			reArray(account->user[account->usernum]->username,array);
-			while(temp=fgetc(fp)!=EOF)
-			{
-				tag=1;
-				if(temp<=9&&temp>=0)
-				{
-					array[count++]=temp;
-				}
-				if (count==6)
-				{
-					reArray(account->user[account->usernum]->password,array);
-					account->usernum++;
-					count=0;
-					break;
-				}
-			}
-		}	
+			date[count++]=numSiwtch(temp);
+		}
+		if(count==8)
+		{
+			reDate(userlog->date,date);
+		}
 	}
 }
-void readAccount(Account *account)
+
+void readLog(Userlog *userlog[20])
 {
-	FILE *fp=fopen("user.txt","r");
-	rewind(fp);
-	arrToSt(fp,account);
+	FILE *fp=fopen("log.txt","r");
+	int *temp;
+	*temp=fgetc(fp);
+	int id=readId(fp,temp);
+	userlog[id]=init_userlog();
+	readDate();
+	readEx();
+	readRe();
 }
-//void readLog(Userlog *userlog)
-//{
-//
-//}
 
 int main(int argc, char const *argv[])
 {
@@ -158,10 +144,10 @@ void Add(Userlog *userlog[20],int chmod)
 	putDate(fp,userlog[chmod]->date);
 	printf("Please input the expenses\n");
 	scanf("%d",&userlog[chmod]->expenses);
-	fprintf(fp, "Expenses=%d\t",userlog[chmod]->expenses);
+	fprintf(fp, "Expenses=%d#",userlog[chmod]->expenses);
 	printf("Please input the revenue\n");
 	scanf("%d",&userlog[chmod]->revenue);
-	fprintf(fp, "Revenue =%d\n",userlog[chmod]->revenue );
+	fprintf(fp, "Revenue=%d\n",userlog[chmod]->revenue );
 	fclose(fp);
 	userlog[chmod]=userlog[chmod]->next;
 	printf("Add Successfully!\n");
@@ -414,4 +400,90 @@ Userlog* init_userlog()
 	Userlog *userlog;
 	userlog=(Userlog*)malloc(sizeof(Userlog));
 	return userlog;
+}
+int numSiwtch(int *temp)
+{
+	int result=0;
+	if(*temp==48)
+		result=0;
+	if(*temp==49)
+		result=1;
+	if(*temp==50)
+		result=2;
+	if(*temp==51)
+		result=3;
+	if(*temp==52)
+		result=4;
+	if(*temp==53)
+		result=5;
+	if(*temp==54)
+		result=6;
+	if(*temp==55)
+		result=7;	
+	if(*temp==56)
+		result=8;							
+	if(*temp==57)
+		result=9;
+	return result;
+}
+int readWhile(FILE *fp,int *temp,int array[MAXSIZE])
+{
+	int tag=0;
+	int count=0;
+	while(*temp!=-1)
+	{
+		if(*temp<=57&&*temp>=48)
+		{
+			array[count]=numSiwtch(temp);
+			count++;
+		}
+		if(count==6)
+		{
+			tag=1;
+			break;
+		}
+		*temp=fgetc(fp);
+	}
+	*temp=fgetc(fp);
+	return tag;
+}
+void arrToSt(FILE *fp,Account *account)
+{
+	int array[MAXSIZE];
+	int *temp;
+	temp=(int*)malloc(sizeof(int));
+	*temp=fgetc(fp);
+	while(*temp!=-1)
+	{
+		int tag=readWhile(fp,temp,array);	
+		if(tag==1)
+		{
+			account->user[account->usernum]=(User*)malloc(sizeof(User));
+			reArray(account->user[account->usernum]->username,array);
+			tag=readWhile(fp,temp,array);
+			reArray(account->user[account->usernum]->password,array);
+			account->usernum++;
+		}
+		*temp=fgetc(fp);
+	}
+}
+void readAccount(Account *account)
+{
+	FILE *fp=fopen("user.txt","r");
+	rewind(fp);
+	arrToSt(fp,account);
+}
+void reArray(int arr1[MAXSIZE],int arr2[MAXSIZE])
+{
+	for(int i=0;i<MAXSIZE;i++)
+	{
+		arr1[i]=arr2[i];
+	}
+}
+void reDate(int date1[8],int date2[8])
+{
+	for(int i=0;i<8;i++)
+	{
+		date1[i]=date2[i];
+	}
 }
