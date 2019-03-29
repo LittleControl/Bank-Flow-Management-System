@@ -52,6 +52,49 @@ void reDate(int date1[8],int date2[8]);
 int readWhile(FILE *fp,int *temp,int array[MAXSIZE]);
 void arrToSt(FILE *fp,Account *account);
 void readAccount(Account *account);
+void seeStrc(Userlog *userlog);
+int readId(FILE *fp,int *temp);
+void readDate(FILE *fp,Userlog *userlog,int *temp);
+void readEx(FILE *fp, Userlog *userlog,int *temp);
+void readRe(FILE *fp, Userlog *userlog,int *temp);
+void init_array(int array[20]);
+void readLog(Userlog *userlog[20]);
+
+
+int main(int argc, char const *argv[])
+{
+	Account *account;
+	Userlog *userlog[20];
+	account=init_account();
+	printf("Reloading the date,please wait ...\n");
+	readAccount(account);
+	readLog(userlog);
+	
+	printf("Welcome\n");
+	printf("Login(0) or Registered(1)?\n");
+	int tag=Choose();
+	if(tag==0)
+	{
+		Login(account,userlog);
+	}
+	else
+	{
+		Registered(account);
+		Login(account,userlog);
+	}
+	return 0;
+}
+void seeStrc(Userlog *userlog)
+{
+	Userlog *p;
+	p=userlog->next;
+	while(p!=NULL)
+	{
+		printf("Expenses=%d\t",p->expenses );
+		printf("Revenue=%d\t\n",p->revenue );
+		p=p->next;
+	}
+}
 int readId(FILE *fp,int *temp)
 {
 	int id=0;
@@ -79,7 +122,6 @@ void readDate(FILE *fp,Userlog *userlog,int *temp)
 		if(count==8)
 		{
 			reDate(userlog->date,date);
-			// printDate(userlog->date);
 		}
 		*temp=fgetc(fp);
 	}
@@ -99,9 +141,9 @@ void readEx(FILE *fp, Userlog *userlog,int *temp)
 	}
 	*temp=fgetc(fp);
 	int sum=0;
-	for(int i=count-1;i>=0;i--)
+	for(int i=0;i<count;i++)
 	{
-		sum=sum+i*pow(10,i);
+		sum=sum+Ex[i]*pow(10,count-1-i);
 	}
 	userlog->expenses=sum;
 }
@@ -119,9 +161,9 @@ void readRe(FILE *fp, Userlog *userlog,int *temp)
 	}
 	*temp=fgetc(fp);
 	int sum=0;
-	for(int i=count-1;i>=0;i--)
+	for(int i=0;i<count;i++)
 	{
-		sum=sum+i*pow(10,i);
+		sum=sum+Re[i]*pow(10,count-1-i);
 	}
 	userlog->revenue=sum;
 }
@@ -150,64 +192,41 @@ void readLog(Userlog *userlog[20])
 	*temp=fgetc(fp);
 	int idArray[20];
 	init_array(idArray);
+	Userlog *head;
+	head=init_userlog();
+
 	while(*temp!=-1)
 	{
 		int id=readId(fp,temp);
 		idCount(idArray,id);
-		if(idArray[id]!=0)
+		if(idArray[id]==1)
 		{
 			userlog[id]=init_userlog();
-		}	
-		readDate(fp,userlog[id],temp);
-		readEx(fp,userlog[id],temp);
-		readRe(fp,userlog[id],temp);
-		userlog[id]=userlog[id]->next;
-		userlog[id]=(Userlog*)malloc(sizeof(Userlog));
+		}
+		readDate(fp,head,temp);
+		readEx(fp,head,temp);
+		readRe(fp,head,temp);
+		head->next=userlog[id]->next;
+		userlog[id]->next=head;
 	}
-	printDate(idArray);
-	printf("\n");
-	printf("expenses=%d\n",userlog[0]->expenses );
-	printDate(userlog[0]->date);
-}
-
-int main(int argc, char const *argv[])
-{
-	Account *account;
-	Userlog *userlog[20];
-	account=init_account();
-	printf("Reloading the date,please wait ...\n");
-	readAccount(account);
-	readLog(userlog);
-	printDate(userlog[0]->date);
-	printf("Welcome\n");
-	printf("Login(0) or Registered(1)?\n");
-	int tag=Choose();
-	if(tag==0)
-	{
-		Login(account,userlog);
-	}
-	else
-	{
-		Registered(account);
-		Login(account,userlog);
-	}
-	return 0;
 }
 void Inquire(Userlog *userlog[20],int date[8],int usrId,Userlog *front)
 {
 	int result=0;
-	while(userlog[usrId]!=NULL)
+	Userlog *p;
+	p=userlog[usrId]->next;
+	while(p!=NULL)
 	{
-		front=userlog[usrId];
-		result=diff_date(userlog[usrId]->date,date);
+		front=p;
+		result=diff_date(p->date,date);
 		if(result==1)
 		{
 			printDate(date);
-			printf("expenses : %d\n",userlog[usrId]->expenses);
-			printf("revenue :  %d\n",userlog[usrId]->revenue );
+			printf("expenses : %d\n",p->expenses);
+			printf("revenue :  %d\n",p->revenue );
 			break;
 		}
-		userlog[usrId]=userlog[usrId]->next;
+		p=p->next;
 	}
 	if(result==0)
 	{
@@ -484,6 +503,7 @@ Userlog* init_userlog()
 {
 	Userlog *userlog;
 	userlog=(Userlog*)malloc(sizeof(Userlog));
+	userlog->next=NULL;
 	return userlog;
 }
 int numSiwtch(int *temp)
