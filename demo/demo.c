@@ -66,24 +66,9 @@ void CheckReDate(Userlog *userlog,int maxRe);
 void Statistics(Userlog *userlog);
 void Inquire(Account *account,Userlog *userlog[20],int date[8],int userId,Userlog *front);
 void loopUser(Account *account,Userlog *userlog[20],int chmod,Userlog *front);
-void putFile(Account *account,Userlog *userlog[20])
-{
-	FILE *fp=fopen("log.txt","w+");
-	for(int i=0;i<account->usernum;i++)
-	{
-		userlog[i]=userlog[i]->next;
-		while(userlog[i]!=NULL)
-		{
-			fprintf(fp, "%s:%d\n","UserId",i );
-			putDate(fp,userlog[i]->date);
-			fprintf(fp, "Expenses=%d#",userlog[i]->expenses);
-			printf("expenses=%d\n",userlog[i]->expenses);
-			fprintf(fp, "Revenue=%d\n",userlog[i]->revenue );
-			userlog[i]=userlog[i]->next;
-		}
-	}
-	fclose(fp);
-}
+void loopMain(Account *account,Userlog *userlog[20],int userId,int chmod,Userlog *front);
+void putFile(Account *account,Userlog *userlog[20]);
+
 
 int main(int argc, char const *argv[])
 {
@@ -115,7 +100,8 @@ void seeStrc(Userlog *userlog)
 	while(p!=NULL)
 	{
 		printf("Expenses=%d\t",p->expenses );
-		printf("Revenue=%d\t\n",p->revenue );
+		printf("Revenue=%d\t",p->revenue );
+		printDate(p->date);
 		p=p->next;
 	}
 }
@@ -236,6 +222,7 @@ void readLog(Userlog *userlog[20])
 		userlog[id]->next=head;
 		// seeStrc(userlog[id]);
 	}
+	// seeStrc(userlog[0]);
 }
 void CheckExDate(Userlog *userlog,int maxEx)
 {
@@ -270,12 +257,12 @@ void Statistics(Userlog *userlog)
 	Userlog *p;
 	p=userlog->next;
 //	p=init_userlog();
-	int sumEx;
-	int sumRe;
-	int maxEx;
-	int maxRe;
+	int sumEx=0;
+	int sumRe=0;
+	int maxEx=p->expenses;
+	int maxRe=p->revenue;
 	int label=0;
-	while(p!=NULL&&p->next!=NULL)
+	while(p->next!=NULL)
 	{
 		maxEx=max(p->expenses,p->next->expenses);
 		maxRe=max(p->revenue,p->next->revenue);
@@ -295,20 +282,25 @@ void Statistics(Userlog *userlog)
 		printf("Your cumulative expenditure is %d\n",sumEx );
 		printf("Your cumulative revenue is %d\n",sumRe );
 	}
-	free(p);
+//	free(p);
 }
 void Inquire(Account *account,Userlog *userlog[20],int date[8],int userId,Userlog *front)
 {
 	printf("userId=%d\n",userId );
 	int result=0;
 	Userlog *p;
+	front=userlog[userId];
+	printf("front->next->revenue=%d\n",front->next->revenue );
 	if(userlog[userId]==NULL)
+	{
 		p=NULL;
+	}
 	else
+	{
 		p=userlog[userId]->next;
+	}
 	while(p!=NULL)
 	{
-		front=p;
 		result=diff_date(p->date,date);
 		if(result==1)
 		{
@@ -317,8 +309,10 @@ void Inquire(Account *account,Userlog *userlog[20],int date[8],int userId,Userlo
 			printf("revenue :  %d\n",p->revenue );
 			break;
 		}
+		front=p;
 		p=p->next;
 	}
+	printf("front->revenue=%d\n",front->revenue );
 	if(result==0)
 	{
 		printf("Sorry,nothing can be founded!\n");
@@ -346,14 +340,22 @@ void Add(Userlog *userlog[20],int chmod)
 	p->next=userlog[chmod]->next;
 	userlog[chmod]->next=p;
 	// printf("userlog[chmod]->next->expenses=%d\n",userlog[chmod]->next->expenses );
-	seeStrc(userlog[chmod]);
+	printDate(userlog[chmod]->next->date);
+	// seeStrc(userlog[chmod]);
 	printf("Add Successfully!\n");
 }
 void Delete(Userlog *userlog[20],int chmod,Userlog *front)
 {
 	if(chmod==-1)
 	{
-		front->next=front->next->next;
+		if(front->next!=NULL&&front->next->next!=NULL)
+		{
+			front->next=front->next->next;
+		}
+		else
+		{
+			front->next=NULL;
+		}
 		printf("Delete Successfully!\n");
 	}
 	else
@@ -383,39 +385,41 @@ void loopMain(Account *account,Userlog *userlog[20],int userId,int chmod,Userlog
 {
 	int choice=0;
 	int date[8];
+	seeStrc(userlog[userId]);
 	Statistics(userlog[userId]);
 	printf("Please input date you want to operation\n");
 	Assign_date(date);
 	Inquire(account,userlog,date,userId,front); 
+	printf("front->expenses=%d\n",front->expenses );
 	printf("1.add    \t2.delete \t3.modify \t4.inquire\t5.quit   \n");
 	scanf("%d",&choice);
 	if(choice==1)
 	{
-		Add(userlog,chmod);
-		loopMain(account,userlog,userId, chmod,front);
+		Add(userlog,userId);
+		loopMain(account,userlog,userId,chmod,front);
 	}
-	else if(choice==2)
+	if(choice==2)
 	{
 		Delete(userlog,chmod,front);
 		loopMain(account,userlog,userId, chmod,front);
 	}
-	else if(choice==3)
+	if(choice==3)
 	{
 		Modify(userlog,chmod,front);
 		loopMain(account,userlog,userId, chmod,front);
 	}
-	else if(choice==4)
+	if(choice==4)
 	{
 		Statistics(userlog[userId]);
 		Inquire(account,userlog,date,chmod,front);
 		loopMain(account,userlog,userId, chmod,front);
 	}
-	else if(choice==5)
+	if(choice==5)
 	{
 		putFile(account,userlog);
 		exit(1);
 	}
-	else
+	if(choice!=1&&choice!=2&&choice!=3&&choice!=4&&choice!=4)
 	{
 		printf("Your input is wrong!\n");
 		loopMain(account,userlog,userId, chmod,front);
@@ -455,7 +459,7 @@ void loopUser(Account *account,Userlog *userlog[20],int chmod,Userlog *front)
 void Operation(Account *account,Userlog *userlog[20],int chmod)//-1 for admin ,-2 for none,else for user 
 {
 	Userlog *front;
-	front=init_userlog();
+	// front=init_userlog();
 	if(chmod != -2)
 	{
 		if(chmod==-1)
@@ -743,4 +747,22 @@ void reDate(int date1[8],int date2[8])
 int max(int a,int b)
 {
 	return a>b?a:b;
+}
+void putFile(Account *account,Userlog *userlog[20])
+{
+	FILE *fp=fopen("log.txt","w+");
+	for(int i=0;i<account->usernum;i++)
+	{
+		userlog[i]=userlog[i]->next;
+		while(userlog[i]!=NULL)
+		{
+			fprintf(fp, "%s:%d\n","UserId",i );
+			putDate(fp,userlog[i]->date);
+			fprintf(fp, "Expenses=%d#",userlog[i]->expenses);
+			// printf("expenses=%d\n",userlog[i]->expenses);
+			fprintf(fp, "Revenue=%d\n",userlog[i]->revenue );
+			userlog[i]=userlog[i]->next;
+		}
+	}
+	fclose(fp);
 }
