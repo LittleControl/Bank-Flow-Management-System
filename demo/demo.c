@@ -287,10 +287,11 @@ void Statistics(Userlog *userlog)
 void Inquire(Account *account,Userlog *userlog[20],int date[8],int userId,Userlog *front)
 {
 	printf("userId=%d\n",userId );
+	seeStrc(userlog[userId]);
 	int result=0;
 	Userlog *p;
-	front=userlog[userId];
-	printf("front->next->revenue=%d\n",front->next->revenue );
+	// front=userlog[userId];
+	// printf("front->next->revenue=%d\n",front->next->revenue );
 	if(userlog[userId]==NULL)
 	{
 		p=NULL;
@@ -312,7 +313,7 @@ void Inquire(Account *account,Userlog *userlog[20],int date[8],int userId,Userlo
 		front=p;
 		p=p->next;
 	}
-	printf("front->revenue=%d\n",front->revenue );
+	// printf("front->revenue=%d\n",front->revenue );
 	if(result==0)
 	{
 		printf("Sorry,nothing can be founded!\n");
@@ -390,7 +391,7 @@ void loopMain(Account *account,Userlog *userlog[20],int userId,int chmod,Userlog
 	printf("Please input date you want to operation\n");
 	Assign_date(date);
 	Inquire(account,userlog,date,userId,front); 
-	printf("front->expenses=%d\n",front->expenses );
+	printf("front->next->expenses=%d\n",front->next->expenses );
 	printf("1.add    \t2.delete \t3.modify \t4.inquire\t5.quit   \n");
 	scanf("%d",&choice);
 	if(choice==1)
@@ -434,6 +435,7 @@ void loopUser(Account *account,Userlog *userlog[20],int chmod,Userlog *front)
 	scanf("%d",&choice);
 	if(choice==1)
 	{
+		seeStrc(userlog[chmod]);
 		Statistics(userlog[chmod]);
 		printf("Please input date you want to operation\n");
 		Assign_date(date);
@@ -469,11 +471,13 @@ void Operation(Account *account,Userlog *userlog[20],int chmod)//-1 for admin ,-
 			printf("Dear backstage administrator,Welcome you\n");
 			printf("Please input the UserId you want to operate\n");
 			scanf("%d",&userId);
+			front=userlog[userId];
 			loopMain(account,userlog,userId,chmod,front);
 		}
 		else
 		{
 			printf("Welcome to you \n");
+			front=userlog[chmod];
 			loopUser(account,userlog,chmod,front);
 		}
 	}
